@@ -3,4 +3,5 @@
 bin/*
 src/config.in
 src/mare/netmare
-src/mare/version.c
+bootmare
+run/*
