@@ -5,6 +5,13 @@
  * See the file COPYRIGHT for more details regarding TinyMare *
  **************************************************************/
 
+ /* 2017-12-10 - Changed the path of MUD_PROGRAM to the current directory.
+  *  This allows us to put wd in the bin folder with netmare, however it
+  *   requires some modifications to the bootmare script in order to locate and
+  *   launch wd and thus netmare properly.
+  *                                                       - QBFreak@qbfreak.net
+  */
+
 #define _GNU_SOURCE	// Use the GNU C Library Extensions
 
 #include <stdlib.h>
@@ -21,7 +28,7 @@
 # define __GLIBC__ 2
 #endif
 
-#define MUD_PROGRAM	"../bin/netmare"
+#define MUD_PROGRAM	"netmare"
 
 /* choose implementation of strsignal() for your system */
 #ifndef __GLIBC__
@@ -37,7 +44,7 @@
 
 static void init_io() {
   int fd;
-  
+
   /* jump into background */
   if(fork())
     exit(0);
@@ -47,23 +54,23 @@ static void init_io() {
 
   /* close standard input */
   fclose(stdin);
-  
+
   /* open a link to the log file */
   if((fd=open("logs/wd.log", O_WRONLY|O_CREAT|O_APPEND, 0644)) < 0) {
     perror("logs/wd.log");
     exit(1);
   }
-  
+
   /* convert standard output to logfile */
   close(fileno(stdout));
   dup2(fd, fileno(stdout));
   setbuf(stdout, NULL);
-  
+
   /* convert standard error to logfile */
   close(fileno(stderr));
   dup2(fd, fileno(stderr));
   setbuf(stderr, NULL);
-  
+
   /* this logfile reference is no longer needed */
   close(fd);
 }
@@ -113,13 +120,13 @@ int main(int argc, char **argv) {
 
   while(1) {
     copy_logs();
-    
+
     /* Spawn a new process */
     if((mud_pid=fork()) < 0) {
       perror(MUD_PROGRAM);
       exit(1);
     }
-    
+
     /* Execute mud program in child process: */
     if(!mud_pid) {
       unlink("logs/socket_table");
