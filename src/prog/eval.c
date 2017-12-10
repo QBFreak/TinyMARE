@@ -3036,6 +3036,11 @@ FUNCTION(sql) {
     DELIMCH(rdelim, 2, '\n');
     char *sql=args[0];
 
+    if(!power(privs, POW_SQL)) {
+        strcpy(buff, ERR_PERM);
+        return;
+    }
+
     sqlite3_stmt *res;
 
     rc = sqlite3_prepare_v2(sdb, sql, -1, &res, 0);

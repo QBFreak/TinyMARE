@@ -11,6 +11,11 @@
 #include "externs.h"
 
 void do_sql(dbref player, char *sql) {
+    if(!power(player, POW_SQL)) {
+        notify(player, "#-1 Permission denied.");
+        return;
+    }
+
     if(!*sql) {
         notify(player, "You must specify a sql statement.");
         return;

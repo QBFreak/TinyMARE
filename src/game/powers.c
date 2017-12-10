@@ -1,5 +1,7 @@
 /* game/powers.c */
 
+/* 2017-12-10 - Added SQL power - QBFreak@qbfreak.net */
+
 #include "externs.h"
 
 char *classnames[NUM_CLASSES]=
@@ -55,7 +57,8 @@ const struct pow_list powers[NUM_POWS]={
  {"Teleport",  "----Y", "---YY", "Ability to use unlimited @teleport"},
  {"Who",       "--LYY", "-YYYY", "Ability to see all the users connected"},
  {"Wizattr",   "----Y", "---YY", "Ability to set wizard attributes"},
- {"Wizflags",  "---YY", "--YYY", "Ability to set wizard flags"}};
+ {"Wizflags",  "---YY", "--YYY", "Ability to set wizard flags"},
+ {"SQL",       "----Y", "----Y", "Ability to run SQL statements"}};
 
 void list_powers(dbref player, char *arg2)
 {
@@ -207,7 +210,7 @@ void do_empower(dbref player, char *whostr, char *powstr)
   } if((who=lookup_player(whostr)) <= NOTHING) {
     notify(player, "No such player '%s'.", whostr);
     return;
-  } 
+  }
 
   *i++='\0';
 

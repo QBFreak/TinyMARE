@@ -1,4 +1,7 @@
 /* hdrs/powers.h */
+
+/* 2017-12-10 - Added POW_SQL power - QBFreak@qbfreak.net */
+
 /* Defines class and power structures */
 
 #define CLASS_GUEST	0  // Guest character, disappears on QUIT
@@ -27,12 +30,12 @@ enum powers {
   POW_JOIN, POW_MEMBER, POW_MODIFY, POW_MONEY, POW_NEWPASS, POW_NUKE,
   POW_PCREATE, POW_PFILE, POW_PLANE, POW_QUEUE, POW_REMOTE, POW_SECURITY,
   POW_SHUTDOWN, POW_SITELOCK, POW_SLAVE, POW_SPOOF, POW_STATS, POW_SUMMON,
-  POW_TELEPORT, POW_WHO, POW_WIZATTR, POW_WIZFLAGS,
+  POW_TELEPORT, POW_WHO, POW_WIZATTR, POW_WIZFLAGS, POW_SQL,
 };
 
 /* If you change this number, all .c files must be recompiled! */
 
-#define NUM_POWS 39
+#define NUM_POWS 40
 
 extern char *classnames[];
 extern char *typenames[];
