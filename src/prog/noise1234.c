@@ -185,7 +185,7 @@ float pnoise1( float x, int px )
 float noise2( float x, float y )
 {
     // x=0;y=0;
-    log_main("%f, %f", x, y);
+    log_main("B. %f, %f", x, y);
     int ix0, iy0, ix1, iy1;
     float fx0, fy0, fx1, fy1;
     float s, t, nx0, nx1, n0, n1;
@@ -215,6 +215,7 @@ float noise2( float x, float y )
     float n2 = 0.507f * ( LERP( s, n0, n1 ) );
     // log_main("%f, %f = %f", x, y, n2);
     // log_main("TEST");
+    log_main("C. %f, %f", x, y);
     return n2;
 }
 
