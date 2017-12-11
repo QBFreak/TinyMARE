@@ -3109,6 +3109,22 @@ FUNCTION(sql) {
     sqlite3_finalize(res);
 }
 
+FUNCTION(noise1) {
+    print_float(buff, noise1(atof(args[0])*0.1));
+}
+
+FUNCTION(noise2) {
+    float p1 = atof(args[0])*0.1;
+    float p2 = atof(args[1])*0.1;
+    float n2 = noise2(p1,p2);
+    //log_main("%f", n2);
+    // log_main("%s, %s = %f", args[0], args[1], n2);
+    print_float(buff, n2);
+}
+
+FUNCTION(noise3) {
+    print_float(buff, noise3(atof(args[0])*0.1,atof(args[1])*0.1,atof(args[2])*0.1));
+}
 
 /* Function flags */
 #define F_EVAL	0x1	// Function arguments are automatically evaluated.
@@ -3264,6 +3280,9 @@ static struct funclist {
   {"NEQ",	fun_neq,	0, 2},
   {"NETSTAT",	fun_netstat,	0, 1},
   {"NEXT",	fun_next,	0, 1},
+  {"NOISE1",    fun_noise1, 0, 1,1},
+  {"NOISE2",    fun_noise2, 0, 2,2},
+  {"NOISE3",    fun_noise3, 0, 3,3},
   {"NOT",	fun_not,	0, 1},
   {"NUM",	fun_num,	0, 1},
   {"OBJLIST",	fun_objlist,	0, 1},
