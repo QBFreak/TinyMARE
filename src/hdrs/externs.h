@@ -1,6 +1,7 @@
 /* hdrs/externs.h */
 
 /* 2017-12-10 - Added #include for <sqlite3.h> and "sqlite.h" header files
+ * 2017-12-11 - Added #include for "noise1234.h" header file
  *                                                    - QBFreak@qbfreak.net */
 
 /* included by every file; sets up our system declarations */
@@ -312,6 +313,7 @@ extern int tinyport;
 #include "queue.h"
 #include "sqlite.h"
 #include "match.h"
+#include "noise1234.h"
 
 #include "db.h"
 

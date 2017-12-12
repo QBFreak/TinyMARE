@@ -1,6 +1,7 @@
 /* prog/eval.c - Function Parser */
 
 /* 2017-12-10 - Added sql() softcode function - QBFreak@qbfreak.net */
+/* 2017-12-11 - Added noise1()-noise4() functions - QBFreak@qbfreak.net */
 
 #include "externs.h"
 #include <math.h>
@@ -3116,11 +3117,7 @@ FUNCTION(noise1) {
 FUNCTION(noise2) {
     float p1 = atof(args[0])*0.1;
     float p2 = atof(args[1])*0.1;
-    log_main("A. %f. %f", p1, p2);
     float n2 = noise2(p1,p2);
-    log_main("D. %f. %f", p1, p2);
-    //log_main("%f", n2);
-    // log_main("%s, %s = %f", args[0], args[1], n2);
     print_float(buff, n2);
 }
 
