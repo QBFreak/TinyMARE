@@ -58,7 +58,7 @@ const struct pow_list powers[NUM_POWS]={
  {"Who",       "--LYY", "-YYYY", "Ability to see all the users connected"},
  {"Wizattr",   "----Y", "---YY", "Ability to set wizard attributes"},
  {"Wizflags",  "---YY", "--YYY", "Ability to set wizard flags"},
- {"SQL",       "----Y", "----Y", "Ability to run SQL statements"}};
+ {"SQL",       "----Y", "--YYY", "Ability to run SQL statements"}};
 
 void list_powers(dbref player, char *arg2)
 {
