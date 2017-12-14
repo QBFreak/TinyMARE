@@ -4,6 +4,7 @@
 
 /* 2017-12-10 - Added @sql command
  * 2017-12-13 - Added the @python command
+ * 2017-12-14 - Added the @pytr command
  *                                        - QBFreak@qbfreak.net */
 
 /* list the commands */
@@ -159,6 +160,7 @@ static struct cmdlist {
   {"@print",		do_print,		1,0},
   {"@ps",		do_ps,			1,0},
   {"@python",   do_python,      1,0},
+  {"@pytr",		do_pytr,		3,0},
   {"@pu",		do_push,		1,1},
   {"@push",		do_push,		1,0},
   {"@re",		do_remit,		2,1},

@@ -59,17 +59,60 @@ void do_python(dbref player, char *python) {
             Py_DecRef(pRepr);
             Py_DecRef(pExcValue);
         }
-        // Traceback object
-        // if (pExcTraceback != NULL) {
-        //     PyObject* pRepr = PyObject_Repr(pExcTraceback);
-        //     log_error("Python exception: %s", PyString_AsString(pRepr));
-        //     Py_DecRef(pRepr);
-        //     Py_DecRef(pExcTraceback);
-        // }
-        /* Do something with tb */
+        /* Do something with exception */
         notify(player, "#-1 Python exception");
     }
 
     // Done!
     Py_Finalize();
+}
+
+/* Trigger an attribute to run as Python */
+void do_pytr(player, object, arg2, argv, pure, cause)
+dbref player, cause;
+char *object, *arg2, **argv, *pure;
+{
+  dbref thing;
+  ATTR *attr;
+  char *s;
+  int a;
+
+  /* validate target */
+  if(!(s=strchr(object, '/'))) {
+    notify(player, "You must specify an attribute name.");
+    return;
+  }
+  *s++='\0';
+  if((thing=match_thing(player, object, MATCH_EVERYTHING)) == NOTHING)
+    return;
+  if(!controls(player, thing, POW_MODIFY)) {
+    notify(player, "Permission denied.");
+    return;
+  }
+
+  /* Validate attribute */
+  if(!(attr=atr_str(thing, s))) {
+    notify(player, "No match.");
+    return;
+  } if(!can_see_atr(player, thing, attr)) {
+    notify(player, "Permission denied.");
+    return;
+  } if(attr->flags & (AF_HAVEN|AF_LOCK|AF_FUNC)) {
+    notify(player, "Cannot trigger that attribute.");
+    return;
+  }
+
+  /* Trigger attribute */
+  for(a=0;a<10;a++)
+    if(argv[a+1])
+      strcpy(env[a], argv[a+1]);
+    else
+      *env[a]='\0';
+
+  if(!Quiet(player))
+    notify(player, "%s - Triggered.", db[thing].name);
+
+  char *contents=atr_get_obj(thing, attr->obj, attr->num);
+  do_python(player, contents);
+
 }

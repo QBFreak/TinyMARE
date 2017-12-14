@@ -1,7 +1,8 @@
 /* hdrs/defs.h */
 
 /* 2017-12-10 - Added do_sql() function
- * 2017-12-13 - Added do_python*() function - QBFreak@qbfreak.net */
+ * 2017-12-13 - Added do_python() function
+ * 2017-12-14 - Added do_pytr() function - QBFreak@qbfreak.net */
 
 /* External function declarations */
 
@@ -444,6 +445,7 @@ extern void del_hash(hash *tab, char *name);
 
 /* prog/python.c */
 extern void do_python(dbref player, char *python);
+extern void do_pytr(dbref player, char *object, char *arg2, char **argv, char *pure, dbref cause);
 
 /* mare/config.c */
 extern void list_config(dbref player, char *arg1);
