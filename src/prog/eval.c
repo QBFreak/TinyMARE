@@ -3125,6 +3125,17 @@ FUNCTION(noise3) {
     print_float(buff, noise3(atof(args[0])*0.1,atof(args[1])*0.1,atof(args[2])*0.1));
 }
 
+FUNCTION(python) {
+    char *res = exec_python(args[0]);
+    for(int i=0;i<8192;i++)
+        if(i>0 && res[i-1] == 0)
+            /* We found the end, the reason to check res[i-1]==0 is to make
+                sure we've already copied the string terminator */
+            break;
+        else
+            buff[i] = res[i];
+}
+
 /* Function flags */
 #define F_EVAL	0x1	// Function arguments are automatically evaluated.
 #define F_STRIP	0x2	// Strip ansi escape codes from arguments.
@@ -3308,6 +3319,7 @@ static struct funclist {
   {"POSS",	fun_poss,	0, 1},
   {"POW",	fun_pow,	0, 2},
   {"POWERS",	fun_powers,	0, 1},
+  {"PYTHON",    fun_python, 0, 1},
   {"RAND",	fun_rand,	0, 1},
   {"RANDEXIT",	fun_randexit,	0, 1},
   {"RANDWORD",	fun_randword,	2, 1,2},

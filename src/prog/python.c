@@ -8,7 +8,15 @@
 
 #include "externs.h"
 
-void do_python(dbref player, char *python) {
+char* exec_python(char *python) {
+    // Output buffer
+    static char buff[8192];
+    // Wipe the results of the last run
+    for (int i=0;i<8192;i++)
+        buff[i] = 0;
+    // Index of buff[] as we fill it up
+    int b = 0;
+
     Py_Initialize();
 
     //const char* pythonScript = "result = multiplicand * multiplier\n";
@@ -36,10 +44,17 @@ void do_python(dbref player, char *python) {
     while(fgets(line, sizeof line, pythonOutput) != NULL) {
         // Strip trailing \n
         for (int i=0;i<1024;i++) {
-            if (line[i] == 0 && i > 0 && line[i-1] == '\n')
-                line[i-1] = 0;
+            if (line[i] == 0)
+                // Don't copy the string terminator
+                break;
+            buff[b] = line[i];
+            b++;
+            if (b > 8192) {
+                // ACK! Buffer full! Terminate the string and return it
+                buff[8191] = 0;
+                return buff;
+            }
         }
-        notify(player, "%s", line);
     }
 
     // Check for errors
@@ -60,14 +75,38 @@ void do_python(dbref player, char *python) {
             Py_DecRef(pExcValue);
         }
         /* Do something with exception */
-        notify(player, "#-1 Python exception");
+        // notify(player, "#-1 Python exception");
+        char errExecption[21] = "#-1 Python exception";
+        // b--; // Remove the 0 terminator
+        // Only copy the error, not the string terminator (size - 1)
+        for (int i=0;i<20;i++) {
+            buff[b] = errExecption[i];
+            b++;
+            if (b > 8192) {
+                // ACK! Buffer full! Terminate the string and return it
+                buff[8191] = 0;
+                return buff;
+            }
+        }
     }
 
     // Done!
     Py_Finalize();
+
+    // Remove the trailing newline, if there is one
+    for (int i=0;i<8192;i++)
+        if(buff[i] == 0 && i > 0 && buff[i-1] == '\n')
+            buff[i-1] = 0;
+
+    return buff;
 }
 
-/* Trigger an attribute to run as Python */
+/* @python command - Execute Python and display output to player */
+void do_python(dbref player, char *python) {
+    notify(player, exec_python(python));
+}
+
+/* @pytr command - Trigger an attribute to run as Python */
 void do_pytr(player, object, arg2, argv, pure, cause)
 dbref player, cause;
 char *object, *arg2, **argv, *pure;
@@ -113,6 +152,6 @@ char *object, *arg2, **argv, *pure;
     notify(player, "%s - Triggered.", db[thing].name);
 
   char *contents=atr_get_obj(thing, attr->obj, attr->num);
-  do_python(player, contents);
+  notify(player, exec_python(contents));
 
 }
