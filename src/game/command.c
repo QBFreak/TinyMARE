@@ -2,7 +2,9 @@
 
 #include "externs.h"
 
-/* 2017-12-10 - Added @sql command - QBFreak@qbfreak.net */
+/* 2017-12-10 - Added @sql command
+ * 2017-12-13 - Added the @python command
+ *                                        - QBFreak@qbfreak.net */
 
 /* list the commands */
 /* A=#args.. 0=none parsed, 1=arg1 parsed, 2=arg2 parsed, 3=argv parsed,
@@ -156,6 +158,7 @@ static struct cmdlist {
   {"@pri",		do_print,		1,1},
   {"@print",		do_print,		1,0},
   {"@ps",		do_ps,			1,0},
+  {"@python",   do_python,      1,0},
   {"@pu",		do_push,		1,1},
   {"@push",		do_push,		1,0},
   {"@re",		do_remit,		2,1},

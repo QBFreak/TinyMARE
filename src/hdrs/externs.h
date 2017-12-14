@@ -2,12 +2,15 @@
 
 /* 2017-12-10 - Added #include for <sqlite3.h> and "sqlite.h" header files
  * 2017-12-11 - Added #include for "noise1234.h" header file
+ * 2017-12-13 - Added #include for <Python.h> header file
  *                                                    - QBFreak@qbfreak.net */
 
 /* included by every file; sets up our system declarations */
 
 #define _GNU_SOURCE	// Use the GNU C Library Extensions
 
+// Include Python.h BEFORE stdlib, etc per Python docs
+#include <Python.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

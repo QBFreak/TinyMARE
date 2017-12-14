@@ -1,0 +1,7 @@
+CC = gcc
+CFLAGS = $(shell python2.7-config --cflags) -O3 -Wall -Wno-unused-result -Wno-pointer-sign -Wno-unused-value -Wno-format-security -Wno-unused-but-set-variable -fomit-frame-pointer -I${HDRS}
+LDLIBS = $(shell python2.7-config --ldflags) -lm -lresolv -lsqlite3
+SUBDIRS = comm db game io prog mare
+
+LIBS = ../game/libgame.a ../comm/libcomm.a ../db/libdb.a ../io/libio.a \
+       ../prog/libprog.a
