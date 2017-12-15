@@ -19,31 +19,37 @@ char* exec_python(char *python, dbref player, dbref cause) {
 
     Py_Initialize();
 
-    PyObject* pmain = PyImport_AddModule("__main__");
-    PyObject* globalDictionary = PyModule_GetDict(pmain);
-    PyObject* localDictionary = PyDict_New();
+    // Set up the __main__ module
+    PyObject* module_main = PyImport_AddModule("__main__");
+    PyObject* dict_main = PyModule_GetDict(module_main);
+    PyObject* dict_local = PyDict_New();
+
+    // Import sys
+    PyObject* module_sys = PyImport_ImportModule("sys");
+    PyObject* dict_sys = PyModule_GetDict(module_sys);
+    PyDict_SetItemString(dict_main, "sys", module_sys);
+
+    // Our Python modules are in lib/python but cwd is run/, so ../lib/python/
+    PyRun_SimpleString( "sys.path.append(\"../lib/python/\")\n" );
+
+    // Import TinyMARE
+    PyObject* module_tinymare = PyImport_ImportModule("TinyMARE");
+    PyObject* dict_tinymare = PyModule_GetDict(module_tinymare);
+    PyDict_SetItemString(dict_main, "TinyMARE", module_tinymare);
 
     // Redirect stdout
     PyObject* pyStdOut = PyFile_FromString("CONOUT$", "w+");
-    PyObject* sys = PyImport_ImportModule("sys");
-    PyObject_SetAttrString(sys, "stdout", pyStdOut);
-
-    // Our Python modules are in lib/python but cwd is run/, so ../lib/python/
-    PyRun_SimpleString( "import sys\nsys.path.append(\"../lib/python/\")\n" );
-
-    // Import TinyMARE
-    PyObject* tinymare_module = PyImport_ImportModule("TinyMARE");
-    PyObject* tinymare_dict = PyModule_GetDict(tinymare_module);
-    PyDict_SetItemString(globalDictionary, "TinyMARE", tinymare_module);
+    PyObject_SetAttrString(module_sys, "stdout", pyStdOut);
 
     // actor = %# = player
     // thing = %! = cause
-    PyDict_SetItemString(localDictionary, "player", PyInt_FromLong((long) player));
-    PyDict_SetItemString(localDictionary, "cause", PyInt_FromLong((long) cause));
+    PyDict_SetItemString(dict_local, "player", PyInt_FromLong((long) player));
+    PyDict_SetItemString(dict_local, "cause", PyInt_FromLong((long) cause));
 
-    PyRun_String(python, Py_file_input, globalDictionary, localDictionary);
+    // Run the Python
+    PyRun_String(python, Py_file_input, dict_main, dict_local);
 
-    // Display output
+    // Buffer output
     FILE* pythonOutput = PyFile_AsFile(pyStdOut);
     rewind(pythonOutput);
     char line[1024];
