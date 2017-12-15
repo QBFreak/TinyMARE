@@ -28,6 +28,14 @@ char* exec_python(char *python, dbref player, dbref cause) {
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject_SetAttrString(sys, "stdout", pyStdOut);
 
+    // Our Python modules are in lib/python but cwd is run/, so ../lib/python/
+    PyRun_SimpleString( "import sys\nsys.path.append(\"../lib/python/\")\n" );
+
+    // Import TinyMARE
+    PyObject* tinymare_module = PyImport_ImportModule("TinyMARE");
+    PyObject* tinymare_dict = PyModule_GetDict(tinymare_module);
+    PyDict_SetItemString(globalDictionary, "TinyMARE", tinymare_module);
+
     // actor = %# = player
     // thing = %! = cause
     PyDict_SetItemString(localDictionary, "player", PyInt_FromLong((long) player));
