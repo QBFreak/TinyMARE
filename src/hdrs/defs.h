@@ -444,8 +444,9 @@ extern void add_hash(hash *tab, void *entry);
 extern void del_hash(hash *tab, char *name);
 
 /* prog/python.c */
-char* exec_python(char *python);
-extern void do_python(dbref player, char *python);
+char* exec_python(char *python, dbref player, dbref cause);
+//extern void do_python(dbref player, char *python);
+extern void do_python(dbref player, char *python, char *arg2, char **argv, char *pure, dbref cause);
 extern void do_pytr(dbref player, char *object, char *arg2, char **argv, char *pure, dbref cause);
 
 /* mare/config.c */

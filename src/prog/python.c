@@ -8,7 +8,7 @@
 
 #include "externs.h"
 
-char* exec_python(char *python) {
+char* exec_python(char *python, dbref player, dbref cause) {
     // Output buffer
     static char buff[8192];
     // Wipe the results of the last run
@@ -19,7 +19,6 @@ char* exec_python(char *python) {
 
     Py_Initialize();
 
-    //const char* pythonScript = "result = multiplicand * multiplier\n";
     PyObject* pmain = PyImport_AddModule("__main__");
     PyObject* globalDictionary = PyModule_GetDict(pmain);
     PyObject* localDictionary = PyDict_New();
@@ -29,13 +28,12 @@ char* exec_python(char *python) {
     PyObject* sys = PyImport_ImportModule("sys");
     PyObject_SetAttrString(sys, "stdout", pyStdOut);
 
-    // PyDict_SetItemString(localDictionary, "multiplicand", PyInt_FromLong(2));
-    // PyDict_SetItemString(localDictionary, "multiplier", PyInt_FromLong(5));
+    // actor = %# = player
+    // thing = %! = cause
+    PyDict_SetItemString(localDictionary, "player", PyInt_FromLong((long) player));
+    PyDict_SetItemString(localDictionary, "cause", PyInt_FromLong((long) cause));
+
     PyRun_String(python, Py_file_input, globalDictionary, localDictionary);
-
-    // long result = PyInt_AsLong(PyDict_GetItemString(localDictionary, "result"));
-
-    //notify(player, "Result: %ld", result);
 
     // Display output
     FILE* pythonOutput = PyFile_AsFile(pyStdOut);
@@ -75,9 +73,7 @@ char* exec_python(char *python) {
             Py_DecRef(pExcValue);
         }
         /* Do something with exception */
-        // notify(player, "#-1 Python exception");
         char errExecption[21] = "#-1 Python exception";
-        // b--; // Remove the 0 terminator
         // Only copy the error, not the string terminator (size - 1)
         for (int i=0;i<20;i++) {
             buff[b] = errExecption[i];
@@ -102,8 +98,14 @@ char* exec_python(char *python) {
 }
 
 /* @python command - Execute Python and display output to player */
-void do_python(dbref player, char *python) {
-    notify(player, exec_python(python));
+void do_python(player, python, arg2, argv, pure, cause)
+dbref player, cause;
+char *python, *arg2, **argv, *pure;
+{
+    // TODO: Loop through the return of exec_python() and do a separate
+    //          notify() for each line. This matters for things like puppets
+    //          and @iterate
+    notify(player, exec_python(python, player, cause));
 }
 
 /* @pytr command - Trigger an attribute to run as Python */
@@ -151,7 +153,10 @@ char *object, *arg2, **argv, *pure;
   if(!Quiet(player))
     notify(player, "%s - Triggered.", db[thing].name);
 
+  // TODO: Loop through the return of exec_python() and do a separate
+  //          notify() for each line. This matters for things like puppets
+  //          and @iterate
   char *contents=atr_get_obj(thing, attr->obj, attr->num);
-  notify(player, exec_python(contents));
+  notify(player, exec_python(contents, player, cause));
 
 }
