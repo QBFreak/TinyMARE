@@ -9,6 +9,12 @@
 #include "externs.h"
 
 char* exec_python(char *python, dbref player, dbref cause) {
+    /* If we ever make the Python environment persistant, we need to get serious
+     * about refcounting. Right now we're depending on Py_Finalize to clean
+     * things up for us. DESPITE THIS, try and Py_DecRef your objects when
+     * you're done with them. Lets be responsible here...
+     */
+
     // Output buffer
     static char buff[8192];
     // Wipe the results of the last run
@@ -40,6 +46,11 @@ char* exec_python(char *python, dbref player, dbref cause) {
     // Redirect stdout
     PyObject* pyStdOut = PyFile_FromString("CONOUT$", "w+");
     PyObject_SetAttrString(module_sys, "stdout", pyStdOut);
+
+    // PyObject* data = Py_BuildValue("{s:i}", "num", player);
+    // PyObject* object = PyInstance_New(Py_BuildValue("s", "TinyMARE.object"), NULL, data);
+    // PyDict_SetItemString(dict_local, "obj", object);
+    PyRun_SimpleString("obj = TinyMARE.object(1)\n");
 
     // actor = %# = player
     // thing = %! = cause
