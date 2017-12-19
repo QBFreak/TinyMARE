@@ -3,6 +3,7 @@
 *.pyc
 bin/*
 src/config.in
+src/.config
 src/mare/netmare
 bootmare
 run/*
