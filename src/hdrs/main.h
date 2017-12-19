@@ -4,7 +4,7 @@
 #define DEFAULT_MUDNAME	"TinyMARE"
 #define DEFAULT_PORT	7348
 
-#define DEFAULT_EMAIL	"winds@winds.org"
+#define DEFAULT_EMAIL	"qbfreak@qbfreak.net"
 
 
 #define STACK_GROWS_DOWN
