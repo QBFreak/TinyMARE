@@ -1,5 +1,6 @@
 *.o
 *.a
+*.pyc
 bin/*
 src/config.in
 src/mare/netmare
