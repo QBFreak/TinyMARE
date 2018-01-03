@@ -52,14 +52,270 @@ void putlist(FILE *f, dbref *list)
     putref(f, *ptr);
 }
 
+static void sql_write_object(dbref i)
+{
+  ALIST *attr;
+  ATRDEF *k;
+
+  sqlite3_stmt *res;
+  int result;
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS objects ("
+      "dbref INTEGER,"
+      "name STRING,"
+      "location INTEGER,"
+      "contents INTEGER,"
+      "exits INTEGER,"
+      "link INTEGER,"
+      "next INTEGER,"
+      "owner INTEGER,"
+      "flags INTEGER,"
+      "plane INTEGER,"
+      "pennies INTEGER,"
+      "create_time INTEGER,"
+      "mod_time INTEGER,"
+      "parents INTEGER,"
+      "children INTEGER,"
+      "zone INTEGER"
+  ")", -1, &res, 0);
+
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'objects' table creation: %s\n", sqlite3_errmsg(msdb));
+    return;
+  }
+
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "objects", result);
+
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS players ("
+      "class INTEGER,"
+      "rows INTEGER,"
+      "cols INTEGER,"
+      "tz INTEGER,"
+      "tzdst INTEGER,"
+      "gender INTEGER,"
+      "passtype INTEGER,"
+      "term INTEGER,"
+      "steps INTEGER,"
+      "sessions INTEGER,"
+      "age INTEGER,"
+      "last INTEGER,"
+      "lastoff INTEGER,"
+      "pass STRING,"
+      "powers STRING"
+  ")", -1, &res, 0);
+
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'players' table creation: %s\n", sqlite3_errmsg(msdb));
+    return;
+  }
+
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "players", result);
+
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS attributes ("
+      "object INTEGER,"
+      "number STRING,"
+      "text STRING"
+  ")", -1, &res, 0);
+
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'attributes' table creation: %s\n", sqlite3_errmsg(msdb));
+    return;
+  }
+
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "attributes", result);
+
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS attribute_definitions ("
+      "object INTEGER,"
+      "number STRING,"
+      "flags INTEGER,"
+      "name STRING"
+  ")", -1, &res, 0);
+
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'attribute_definitions' table creation: %s\n", sqlite3_errmsg(msdb));
+    return;
+  }
+
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "attribute_definitions", result);
+
+  sqlite3_finalize(res);
+
+  /* Save object header */
+  // putref(f, i);
+  // putstring(f, db[i].name);
+  // putref(f, db[i].location);
+  // putref(f, db[i].contents);
+  // putref(f, db[i].exits);
+  // putref(f, (db[i].link == HOME)?db_top:
+  //           (db[i].link == AMBIGUOUS)?(db_top+1):db[i].link);
+  // putref(f, db[i].next);
+  // putref(f, db[i].owner);
+  // putnum(f, db[i].flags);
+  // putnum(f, db[i].plane);
+  // putnum(f, db[i].pennies);
+
+  // if(db_flags & DB_LONGINT) {
+  //   putlong(f, db[i].create_time);
+  //   putlong(f, db[i].mod_time);
+  // } else {
+  //   putnum(f, db[i].create_time);
+  //   putnum(f, db[i].mod_time);
+  // }
+
+  /* Save object lists */
+  // putlist(f, db[i].parents);
+  // putlist(f, db[i].children);
+  // if(Typeof(i) == TYPE_ROOM || Typeof(i) == TYPE_ZONE)
+  //   putlist(f, db[i].zone);
+
+  /* Write out special player information */
+  if(Typeof(i) == TYPE_PLAYER) {
+    // putchr(f, db[i].data->class-1);
+    // putchr(f, db[i].data->rows);
+    // putchr(f, db[i].data->cols);
+    // putchr(f, (db[i].data->tzdst << 6) | ((db[i].data->tz & 0x1F) << 1) |
+    //           (db[i].data->passtype << 7) | db[i].data->gender);
+    // putshort(f, db[i].data->term);
+    // putnum(f, db[i].data->steps);
+    // putnum(f, db[i].data->sessions);
+    // putnum(f, db[i].data->age);
+
+    // if(db_flags & DB_LONGINT) {
+    //   putlong(f, db[i].data->last);
+    //   putlong(f, db[i].data->lastoff);
+    // } else {
+    //   putnum(f, db[i].data->last);
+    //   putnum(f, db[i].data->lastoff);
+    // }
+
+    // fwrite(db[i].data->pass, db[i].data->passtype?20:10, 1, f);
+    // fwrite(db[i].data->powers, (NUM_POWS+3)/4, 1, f);
+  }
+
+  /* Write the attribute list */
+  for(attr=db[i].attrs;attr;attr=attr->next) {
+    // putchr(f, attr->num);
+    // putref(f, attr->obj);
+    // putstring(f, attr->text);
+  }
+  // putchr(f, 0);
+
+  /* Save attribute definitions */
+  for(k=db[i].atrdefs;k;k=k->next) {
+    // putchr(f, k->atr.num);
+    // putshort(f, k->atr.flags);
+    // putstring(f, k->atr.name);
+  }
+  // putchr(f, 0);
+}
+
+dbref sql_write()
+{
+  long pos, pos2;
+  int i;
+
+  /* Initial database modifier flags */
+  db_flags=0;
+
+  if((unsigned long)time(NULL) > 0xFFFFFFFF)
+    db_flags |= DB_LONGINT;  /* Time must be stored using 64-bits */
+
+  sqlite3_stmt *res;
+  int result;
+
+  log_main("Creating table 'database'");
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS database ("
+      "engine STRING,"
+      "DB_VERSION STRING,"
+      "db_top INTEGER,"
+      "db_flags INTEGER,"
+      "NUM_POWS STRING"
+  ")", -1, &res, 0);
+
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'database' table creation: %s\n", sqlite3_errmsg(msdb));
+    return 0;
+  }
+
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "database", result);
+
+  sqlite3_finalize(res);
+
+  /* Write database header */
+  // fprintf(f, "MARE");
+  // putchr(f, DB_VERSION);
+  // putnum(f, db_top);
+  // putnum(f, db_flags);
+  // putchr(f, NUM_POWS);
+
+  /* Select database reference number byte-length */
+  dbref_len=(db_top+1 < 0xFF)?1:(db_top+1 < 0xFF00)?2:
+             (db_top+1 < 0xFF0000)?3:4;
+
+  /* Save configuration */
+  for(i=0;db_rule[i].type;i++) {
+    /* Config header */
+    // putchr(f, db_rule[i].type);
+
+    /* 4-byte length of configuration data will get filled in */
+    // pos=ftell(f);
+    // putnum(f, 0);
+    // db_rule[i].save(f, db_rule[i].type);
+
+    /* Check if any data has been written */
+    // pos2=ftell(f);
+    // if(pos2-pos < 5)
+    //   fseek(f, -5, SEEK_CUR);  /* No configuration data, back up 5 bytes */
+    // else {
+    //   /* Fill in length */
+    //   fseek(f, pos, SEEK_SET);
+    //   putnum(f, pos2-pos-4);
+    //   fseek(f, pos2, SEEK_SET);
+    // }
+  }
+  // putchr(f, 0);
+
+  /* Write database */
+  for(i=0;i<db_top;i++) {
+    if(Typeof(i) == TYPE_GARBAGE)
+      continue;
+    sql_write_object(i);
+  }
+
+  /* Write closing -1 as end of list marker. Check for out-of-disk errors. */
+  // if(putchr(f, 0xFF) == EOF) {
+  //   perror(filename);
+  //   return 0;
+  // }
+
+  return db_top;
+}
 
 // Procedure to save the entire database to <filename>.
 //
 dbref db_write(FILE *f, char *filename)
 {
+  dbref dt = sql_write();
   long pos, pos2;
   int i;
-  
+
   /* Initial database modifier flags */
   db_flags=0;
 
@@ -119,7 +375,7 @@ static void db_write_object(FILE *f, dbref i)
 {
   ALIST *attr;
   ATRDEF *k;
-  
+
   /* Save object header */
   putref(f, i);
   putstring(f, db[i].name);
