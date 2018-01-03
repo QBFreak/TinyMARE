@@ -14,6 +14,7 @@
 
 char *db_file = "db/mdb";
 char *sdb_file = "db/sdb";
+char *msdb_file = "db/msdb";
 char **mainarg;
 
 int nstat[NET_STATS];
@@ -57,7 +58,7 @@ static int top_desc;
 
 int tinyport=DEFAULT_PORT;
 
-sqlite3 *sdb;
+sqlite3 *sdb, *msdb;
 char *zErrMsg=0;
 int rc;
 
@@ -352,12 +353,19 @@ static void init_game()
   /* Attempt to open all login sockets */
   open_ports();
 
-  /* Open sqlite3 database */
+  /* Open sqlite3 databases */
+  rc = sqlite3_open(msdb_file, &msdb);
+  if(rc) {
+      log_error("Can't open primary SQLite database: %s", sqlite3_errmsg(msdb));
+  } else {
+      log_main("SQLite primary database file opened successfully.");
+  }
+
   rc = sqlite3_open(sdb_file, &sdb);
   if(rc) {
-      log_error("Can't open database: %s", sqlite3_errmsg(sdb));
+      log_error("Can't open secondary SQLite database: %s", sqlite3_errmsg(sdb));
   } else {
-      log_main("SQLite database file opened successfully.");
+      log_main("SQLite secondary database file opened successfully.");
   }
 
   /* Open database file for reading */
@@ -530,7 +538,8 @@ static void close_game()
   if(!db_readonly)
     dump_database();
 
-  /* Close the SQLite3 database */
+  /* Close the SQLite3 databases */
+  sqlite3_close(msdb);
   sqlite3_close(sdb);
 
   /* Restart Netmare if @rebooting */
