@@ -112,35 +112,36 @@ static void sql_write_object(dbref i)
   if (result != SQLITE_DONE)
     log_error("Unexpected result populating '%s' table: %i", "objects", result);
   sqlite3_finalize(res);
-  // putref(f, i);
-  // putstring(f, db[i].name);
-  // putref(f, db[i].location);
-  // putref(f, db[i].contents);
-  // putref(f, db[i].exits);
-  // putref(f, (db[i].link == HOME)?db_top:
-  //           (db[i].link == AMBIGUOUS)?(db_top+1):db[i].link);
-  // putref(f, db[i].next);
-  // putref(f, db[i].owner);
-  // putnum(f, db[i].flags);
-  // putnum(f, db[i].plane);
-  // putnum(f, db[i].pennies);
-
-  // if(db_flags & DB_LONGINT) {
-  //   putlong(f, db[i].create_time);
-  //   putlong(f, db[i].mod_time);
-  // } else {
-  //   putnum(f, db[i].create_time);
-  //   putnum(f, db[i].mod_time);
-  // }
-
-  /* Save object lists */
-  // putlist(f, db[i].parents);
-  // putlist(f, db[i].children);
-  // if(Typeof(i) == TYPE_ROOM || Typeof(i) == TYPE_ZONE)
-  //   putlist(f, db[i].zone);
 
   /* Write out special player information */
   if(Typeof(i) == TYPE_PLAYER) {
+    snprintf(query, 1024, "INSERT INTO players VALUES (%i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %li, %li, '%s', '%s')",
+      i,
+      db[i].data->class-1,
+      db[i].data->rows,
+      db[i].data->cols,
+      db[i].data->tz,
+      db[i].data->tzdst,
+      db[i].data->gender,
+      db[i].data->passtype,
+      db[i].data->term,
+      db[i].data->steps,
+      db[i].data->sessions,
+      db[i].data->age,
+      db[i].data->last,
+      db[i].data->lastoff,
+      db[i].data->pass,
+      db[i].data->powers
+    );
+    rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+    if (rc != SQLITE_OK) {
+      log_error("SQL statement failed during '%s' table population: %s\n", "players", sqlite3_errmsg(msdb));
+      return;
+    }
+    result = sqlite3_step(res);
+    if (result != SQLITE_DONE)
+      log_error("Unexpected result populating '%s' table: %i", "players", result);
+    sqlite3_finalize(res);
     // putchr(f, db[i].data->class-1);
     // putchr(f, db[i].data->rows);
     // putchr(f, db[i].data->cols);
@@ -207,10 +208,10 @@ dbref sql_write()
 
   rc = sqlite3_prepare_v2(msdb, "CREATE TABLE database ("
     "engine STRING,"
-    "DB_VERSION STRING,"
+    "DB_VERSION INTEGER,"
     "db_top INTEGER,"
     "db_flags INTEGER,"
-    "NUM_POWS STRING"
+    "NUM_POWS INTEGER"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
     log_error("SQL statement failed during 'database' table creation: %s\n", sqlite3_errmsg(msdb));
@@ -269,6 +270,7 @@ dbref sql_write()
   sqlite3_finalize(res);
 
   rc = sqlite3_prepare_v2(msdb, "CREATE TABLE players ("
+      "dbref INTEGER,"
       "class INTEGER,"
       "rows INTEGER,"
       "cols INTEGER,"
@@ -344,7 +346,13 @@ dbref sql_write()
   sqlite3_finalize(res);
 
   /* Write database header */
-  snprintf(query, 1024, "INSERT INTO database VALUES ('%s', '%c', %i, %i, '%c')", "MARE", DB_VERSION, db_top, db_flags, NUM_POWS);
+  snprintf(query, 1024, "INSERT INTO database VALUES ('%s', %i, %i, %i, %i)",
+    "MARE",
+    DB_VERSION,
+    db_top,
+    db_flags,
+    NUM_POWS
+  );
   rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
   if (rc != SQLITE_OK) {
     log_error("SQL statement failed during 'database' table population: %s\n", sqlite3_errmsg(msdb));
