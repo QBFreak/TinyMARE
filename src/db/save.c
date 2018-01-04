@@ -58,103 +58,60 @@ static void sql_write_object(dbref i)
   ATRDEF *k;
 
   sqlite3_stmt *res;
-  int result;
+  int result, zone, parents, children;
+  char query[1024];
 
-  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS objects ("
-      "dbref INTEGER,"
-      "name STRING,"
-      "location INTEGER,"
-      "contents INTEGER,"
-      "exits INTEGER,"
-      "link INTEGER,"
-      "next INTEGER,"
-      "owner INTEGER,"
-      "flags INTEGER,"
-      "plane INTEGER,"
-      "pennies INTEGER,"
-      "create_time INTEGER,"
-      "mod_time INTEGER,"
-      "parents INTEGER,"
-      "children INTEGER,"
-      "zone INTEGER"
-  ")", -1, &res, 0);
-
-  if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'objects' table creation: %s\n", sqlite3_errmsg(msdb));
-    return;
+  // Look out for those blasted null pointers...
+  if(Typeof(i) == TYPE_ROOM || Typeof(i) == TYPE_ZONE) {
+    if(db[i].zone == NULL) {
+      zone = NOTHING;
+    } else {
+      zone = *db[i].zone;
+    }
+  } else {
+    zone = NOTHING;
   }
 
-  result = sqlite3_step(res);
-  if (result != SQLITE_DONE)
-    log_error("Unexpected result creating '%s' table: %i", "objects", result);
-
-  sqlite3_finalize(res);
-
-  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS players ("
-      "class INTEGER,"
-      "rows INTEGER,"
-      "cols INTEGER,"
-      "tz INTEGER,"
-      "tzdst INTEGER,"
-      "gender INTEGER,"
-      "passtype INTEGER,"
-      "term INTEGER,"
-      "steps INTEGER,"
-      "sessions INTEGER,"
-      "age INTEGER,"
-      "last INTEGER,"
-      "lastoff INTEGER,"
-      "pass STRING,"
-      "powers STRING"
-  ")", -1, &res, 0);
-
-  if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'players' table creation: %s\n", sqlite3_errmsg(msdb));
-    return;
+  if(db[i].parents == NULL) {
+      parents = NOTHING;
+  } else {
+      parents = *db[i].parents;
   }
 
-  result = sqlite3_step(res);
-  if (result != SQLITE_DONE)
-    log_error("Unexpected result creating '%s' table: %i", "players", result);
-
-  sqlite3_finalize(res);
-
-  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS attributes ("
-      "object INTEGER,"
-      "number STRING,"
-      "text STRING"
-  ")", -1, &res, 0);
-
-  if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'attributes' table creation: %s\n", sqlite3_errmsg(msdb));
-    return;
+  if(db[i].children == NULL) {
+      children = NOTHING;
+  } else {
+      children = *db[i].children;
   }
-
-  result = sqlite3_step(res);
-  if (result != SQLITE_DONE)
-    log_error("Unexpected result creating '%s' table: %i", "attributes", result);
-
-  sqlite3_finalize(res);
-
-  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS attribute_definitions ("
-      "object INTEGER,"
-      "number STRING,"
-      "flags INTEGER,"
-      "name STRING"
-  ")", -1, &res, 0);
-
-  if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'attribute_definitions' table creation: %s\n", sqlite3_errmsg(msdb));
-    return;
-  }
-
-  result = sqlite3_step(res);
-  if (result != SQLITE_DONE)
-    log_error("Unexpected result creating '%s' table: %i", "attribute_definitions", result);
-
-  sqlite3_finalize(res);
 
   /* Save object header */
+  snprintf(query, 1024, "INSERT INTO objects VALUES (%i, '%s', %i, %i, %i, %i, %i, %i, %i, %i, %i, %li, %li, %i, %i, %i)",
+    i,
+    db[i].name,
+    db[i].location,
+    db[i].contents,
+    db[i].exits,
+    (db[i].link == HOME)?db_top: (db[i].link == AMBIGUOUS)?(db_top+1):db[i].link,
+    db[i].next,
+    db[i].owner,
+    db[i].flags,
+    db[i].plane,
+    db[i].pennies,
+    db[i].create_time,
+    db[i].mod_time,
+    parents,
+    children,
+    zone
+  );
+  rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table population: %s\n", "objects", sqlite3_errmsg(msdb));
+    return;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result populating '%s' table: %i", "objects", result);
+  sqlite3_finalize(res);
   // putref(f, i);
   // putstring(f, db[i].name);
   // putref(f, db[i].location);
@@ -225,8 +182,11 @@ static void sql_write_object(dbref i)
 
 dbref sql_write()
 {
-  long pos, pos2;
-  int i;
+  // long pos, pos2;
+  int i, result;
+  sqlite3_stmt *res;
+  char query[1024];
+
 
   /* Initial database modifier flags */
   db_flags=0;
@@ -234,36 +194,166 @@ dbref sql_write()
   if((unsigned long)time(NULL) > 0xFFFFFFFF)
     db_flags |= DB_LONGINT;  /* Time must be stored using 64-bits */
 
-  sqlite3_stmt *res;
-  int result;
+  /* Create all the database tables */
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS database", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'database' table drop: %s\n", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "database", result);
+  sqlite3_finalize(res);
 
-  log_main("Creating table 'database'");
-
-  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE IF NOT EXISTS database ("
-      "engine STRING,"
-      "DB_VERSION STRING,"
-      "db_top INTEGER,"
-      "db_flags INTEGER,"
-      "NUM_POWS STRING"
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE database ("
+    "engine STRING,"
+    "DB_VERSION STRING,"
+    "db_top INTEGER,"
+    "db_flags INTEGER,"
+    "NUM_POWS STRING"
   ")", -1, &res, 0);
-
   if (rc != SQLITE_OK) {
     log_error("SQL statement failed during 'database' table creation: %s\n", sqlite3_errmsg(msdb));
     return 0;
   }
-
   result = sqlite3_step(res);
   if (result != SQLITE_DONE)
     log_error("Unexpected result creating '%s' table: %i", "database", result);
+  sqlite3_finalize(res);
 
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS objects", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s\n", "objects", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "objects", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE objects ("
+      "dbref INTEGER,"
+      "name STRING,"
+      "location INTEGER,"
+      "contents INTEGER,"
+      "exits INTEGER,"
+      "link INTEGER,"
+      "next INTEGER,"
+      "owner INTEGER,"
+      "flags INTEGER,"
+      "plane INTEGER,"
+      "pennies INTEGER,"
+      "create_time INTEGER,"
+      "mod_time INTEGER,"
+      "parents INTEGER,"
+      "children INTEGER,"
+      "zone INTEGER"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s\n", "objects", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "objects", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS players", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s\n", "players", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "players", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE players ("
+      "class INTEGER,"
+      "rows INTEGER,"
+      "cols INTEGER,"
+      "tz INTEGER,"
+      "tzdst INTEGER,"
+      "gender INTEGER,"
+      "passtype INTEGER,"
+      "term INTEGER,"
+      "steps INTEGER,"
+      "sessions INTEGER,"
+      "age INTEGER,"
+      "last INTEGER,"
+      "lastoff INTEGER,"
+      "pass STRING,"
+      "powers STRING"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s\n", "players", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "players", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS attributes", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s\n", "attributes", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "attributes", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE attributes ("
+      "object INTEGER,"
+      "number STRING,"
+      "text STRING"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s\n", "attributes", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "attributes", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS attribute_definitions", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s\n", "attribute_definitions", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "attribute_definitions", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE attribute_definitions ("
+      "object INTEGER,"
+      "number STRING,"
+      "flags INTEGER,"
+      "name STRING"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s\n", "attribute_definitions", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "attribute_definitions", result);
   sqlite3_finalize(res);
 
   /* Write database header */
-  // fprintf(f, "MARE");
-  // putchr(f, DB_VERSION);
-  // putnum(f, db_top);
-  // putnum(f, db_flags);
-  // putchr(f, NUM_POWS);
+  snprintf(query, 1024, "INSERT INTO database VALUES ('%s', '%c', %i, %i, '%c')", "MARE", DB_VERSION, db_top, db_flags, NUM_POWS);
+  rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during 'database' table population: %s\n", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result populating '%s' table: %i", "database", result);
+  sqlite3_finalize(res);
 
   /* Select database reference number byte-length */
   dbref_len=(db_top+1 < 0xFF)?1:(db_top+1 < 0xFF00)?2:
@@ -298,12 +388,6 @@ dbref sql_write()
       continue;
     sql_write_object(i);
   }
-
-  /* Write closing -1 as end of list marker. Check for out-of-disk errors. */
-  // if(putchr(f, 0xFF) == EOF) {
-  //   perror(filename);
-  //   return 0;
-  // }
 
   return db_top;
 }
