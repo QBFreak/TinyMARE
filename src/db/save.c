@@ -142,43 +142,45 @@ static void sql_write_object(dbref i)
     if (result != SQLITE_DONE)
       log_error("Unexpected result populating '%s' table: %i", "players", result);
     sqlite3_finalize(res);
-    // putchr(f, db[i].data->class-1);
-    // putchr(f, db[i].data->rows);
-    // putchr(f, db[i].data->cols);
-    // putchr(f, (db[i].data->tzdst << 6) | ((db[i].data->tz & 0x1F) << 1) |
-    //           (db[i].data->passtype << 7) | db[i].data->gender);
-    // putshort(f, db[i].data->term);
-    // putnum(f, db[i].data->steps);
-    // putnum(f, db[i].data->sessions);
-    // putnum(f, db[i].data->age);
-
-    // if(db_flags & DB_LONGINT) {
-    //   putlong(f, db[i].data->last);
-    //   putlong(f, db[i].data->lastoff);
-    // } else {
-    //   putnum(f, db[i].data->last);
-    //   putnum(f, db[i].data->lastoff);
-    // }
-
-    // fwrite(db[i].data->pass, db[i].data->passtype?20:10, 1, f);
-    // fwrite(db[i].data->powers, (NUM_POWS+3)/4, 1, f);
   }
 
   /* Write the attribute list */
   for(attr=db[i].attrs;attr;attr=attr->next) {
-    // putchr(f, attr->num);
-    // putref(f, attr->obj);
-    // putstring(f, attr->text);
+    snprintf(query, 1024, "INSERT INTO attributes VALUES (%i, %i, %i, '%s')",
+      i,
+      attr->obj,
+      attr->num,
+      attr->text
+    );
+    rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+    if (rc != SQLITE_OK) {
+      log_error("SQL statement failed during '%s' table population: %s\n", "attributes", sqlite3_errmsg(msdb));
+        return;
+    }
+    result = sqlite3_step(res);
+    if (result != SQLITE_DONE)
+      log_error("Unexpected result populating '%s' table: %i", "attributes", result);
+    sqlite3_finalize(res);
   }
-  // putchr(f, 0);
 
   /* Save attribute definitions */
   for(k=db[i].atrdefs;k;k=k->next) {
-    // putchr(f, k->atr.num);
-    // putshort(f, k->atr.flags);
-    // putstring(f, k->atr.name);
+    snprintf(query, 1024, "INSERT INTO attribute_definitions VALUES (%i, %i, %i, '%s')",
+      i,
+      k->atr.num,
+      k->atr.flags,
+      k->atr.name
+    );
+    rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+    if (rc != SQLITE_OK) {
+      log_error("SQL statement failed during '%s' table population: %s\n", "attribute_definitions", sqlite3_errmsg(msdb));
+      return;
+    }
+    result = sqlite3_step(res);
+    if (result != SQLITE_DONE)
+      log_error("Unexpected result populating '%s' table: %i", "attribute_definitions", result);
+    sqlite3_finalize(res);
   }
-  // putchr(f, 0);
 }
 
 dbref sql_write()
@@ -307,8 +309,9 @@ dbref sql_write()
   sqlite3_finalize(res);
 
   rc = sqlite3_prepare_v2(msdb, "CREATE TABLE attributes ("
+      "dbref INTEGER,"
       "object INTEGER,"
-      "number STRING,"
+      "number INTEGER,"
       "text STRING"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
@@ -331,8 +334,8 @@ dbref sql_write()
   sqlite3_finalize(res);
 
   rc = sqlite3_prepare_v2(msdb, "CREATE TABLE attribute_definitions ("
-      "object INTEGER,"
-      "number STRING,"
+      "dbref INTEGER,"
+      "number INTEGER,"
       "flags INTEGER,"
       "name STRING"
   ")", -1, &res, 0);
