@@ -116,7 +116,7 @@ void do_com(dbref player, char *arg1, char *arg2)
       notify(player, "You have been silenced on channel '%s'.", arg1);
       return;
     }
-  
+
   /* Check if this message is a spoof */
   if(!can_emit_msg(player, NOTHING, NOTHING, arg2, 1)) {
     notify(player, "Sorry, your message contains a spoof.");
@@ -242,7 +242,7 @@ void do_channel(dbref player, char *arg1)
 {
   char buf[8192], *r, *s, *t;
   int i;
-  
+
   if(Typeof(player) != TYPE_PLAYER) {
     notify(player, "Objects can not use channels.");
     return;
@@ -272,7 +272,7 @@ void do_channel(dbref player, char *arg1)
       notify(player, "You are blocked from the following channels: %s", buf);
     return;
   }
-  
+
   /* Delete channel */
   if(*arg1 == '-') {
     if(!*++arg1) {
@@ -489,7 +489,7 @@ void do_comblock(dbref player, char *arg1, char *arg2)
          arg2);
 }
 
-// Wizard command to restrict a player's voice from a specific +com channel. 
+// Wizard command to restrict a player's voice from a specific +com channel.
 //
 void do_comvoice(dbref player, char *arg1, char *arg2)
 {
@@ -712,7 +712,7 @@ void do_comlock(dbref player, char *arg1, char *arg2)
         notify(player, "%s removed from lock list for channel '%s'.",
                db[thing].name, arg1);
     } else if(!Quiet(player))
-      notify(player, "%s is not in the lock list for channel '%s'.", 
+      notify(player, "%s is not in the lock list for channel '%s'.",
              db[thing].name, arg1);
     return;
   }
@@ -764,10 +764,43 @@ void list_comlocks(dbref player)
   }
 }
 
+// Saves the comlock list to the SQLite database.
+//
+void sql_save_comlocks()
+{
+  struct comlock *ptr;
+  int *i, result;
+  sqlite3_stmt *res;
+  char query[1024];
+
+  if(!comlock_list)
+    return;
+
+  /* Write locks individually */
+  for(ptr=comlock_list;ptr;ptr=ptr->next) {
+    for(i=ptr->list;i && *i != NOTHING;i++) {
+      snprintf(query, 1024, "INSERT INTO comlocks VALUES ('%s', %i)",
+        ptr->channel,
+        *i
+      );
+      rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+      if (rc != SQLITE_OK) {
+        log_error("SQL statement failed during '%s' table population: %s", "comlocks", sqlite3_errmsg(msdb));
+          return;
+      }
+      result = sqlite3_step(res);
+      if (result != SQLITE_DONE)
+        log_error("Unexpected result populating '%s' table: %i", "comlocks", result);
+      sqlite3_finalize(res);
+    }
+  }
+}
+
 // Saves the comlock list to the database.
 //
 void save_comlocks(FILE *f)
 {
+  sql_save_comlocks();
   struct comlock *ptr;
 
   if(!comlock_list)

@@ -395,6 +395,29 @@ dbref sql_write()
     log_error("Unexpected result creating '%s' table: %i", "sitelocks", result);
   sqlite3_finalize(res);
 
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS comlocks", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s", "comlocks", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "comlocks", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE comlocks ("
+      "channel STRING,"
+      "dbref INTEGER"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s", "comlocks", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "comlocks", result);
+  sqlite3_finalize(res);
+
   /* Write database header */
   snprintf(query, 1024, "INSERT INTO database VALUES ('%s', %i, %i, %i, %i)",
     "MARE",
