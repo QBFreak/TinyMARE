@@ -207,8 +207,96 @@ int load_config(FILE *f)
   return count;
 }
 
+void sql_save_config() {
+    int a, type, count=0;
+    int result;
+    sqlite3_stmt *res;
+    char query[1024];
+
+    for(a=0;a < NELEM(config_list);a++) {
+      type=config_list[a].type & 0xF;
+
+      /* determine which configuration variables to save */
+      if(!(config_list[a].type & SAVE) && (!type || type > CHAR ||
+         (type <= DBREF && config_list[a].def.u32 == *config_list[a].var.u32) ||
+         (type == LONG && config_list[a].def.u64 == *config_list[a].var.u64) ||
+         (type == CHAR && !strcasecmp(config_list[a].def.string,
+          *config_list[a].var.string))))
+        continue;
+
+      /* save configuration to database file */
+      count=1;
+      // putchr(f, type);
+      // putchr(f, config_list[a].num);
+      int varu32;
+      long varu64;
+      char *varstr;
+
+      switch(type) {
+      case INT: case DBREF:
+        if(config_list[a].var.u32==NULL) {
+          snprintf(query, 1024, "INSERT INTO config VALUES (%i, %i, %s)",
+            config_list[a].num,
+            type,
+            "NULL"
+          );
+        } else {
+          varu32 = *config_list[a].var.u32;
+          snprintf(query, 1024, "INSERT INTO config VALUES (%i, %i, %i)",
+            config_list[a].num,
+            type,
+            varu32
+          );
+        }
+        break;
+      case LONG:
+        if(config_list[a].var.u64==NULL) {
+          snprintf(query, 1024, "INSERT INTO config VALUES (%i, %i, %s)",
+            config_list[a].num,
+            type,
+            "NULL"
+          );
+        } else {
+          varu64 = *config_list[a].var.u64;
+          snprintf(query, 1024, "INSERT INTO config VALUES (%i, %i, %li)",
+            config_list[a].num,
+            type,
+            varu64
+          );
+        }
+        break;
+      case CHAR:
+        if(config_list[a].var.string==NULL) {
+          snprintf(query, 1024, "INSERT INTO config VALUES (%i, %i, %s)",
+            config_list[a].num,
+            type,
+            "NULL"
+          );
+        } else {
+          varstr = *config_list[a].var.string;
+          snprintf(query, 1024, "INSERT INTO config VALUES (%i, %i, '%s')",
+            config_list[a].num,
+            type,
+            varstr
+          );
+        }
+        break;
+      }
+      rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+      if (rc != SQLITE_OK) {
+        log_error("SQL statement failed during '%s' table population: %s\n", "config", sqlite3_errmsg(msdb));
+          return;
+      }
+      result = sqlite3_step(res);
+      if (result != SQLITE_DONE)
+        log_error("Unexpected result populating '%s' table: %i", "config", result);
+      sqlite3_finalize(res);
+    }
+}
+
 void save_config(FILE *f)
 {
+  sql_save_config();
   int a, type, count=0;
 
   for(a=0;a < NELEM(config_list);a++) {

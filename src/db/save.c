@@ -348,6 +348,30 @@ dbref sql_write()
     log_error("Unexpected result creating '%s' table: %i", "attribute_definitions", result);
   sqlite3_finalize(res);
 
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS config", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s\n", "config", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "config", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE config ("
+      "number INTEGER,"
+      "type INTEGER,"
+      "var STRING"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s\n", "config", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "config", result);
+  sqlite3_finalize(res);
+
   /* Write database header */
   snprintf(query, 1024, "INSERT INTO database VALUES ('%s', %i, %i, %i, %i)",
     "MARE",
