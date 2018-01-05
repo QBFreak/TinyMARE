@@ -284,7 +284,7 @@ void sql_save_config() {
       }
       rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
       if (rc != SQLITE_OK) {
-        log_error("SQL statement failed during '%s' table population: %s\n", "config", sqlite3_errmsg(msdb));
+        log_error("SQL statement failed during '%s' table population: %s", "config", sqlite3_errmsg(msdb));
           return;
       }
       result = sqlite3_step(res);

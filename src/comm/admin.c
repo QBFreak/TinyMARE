@@ -9,7 +9,7 @@ static int convert_flags(dbref player, char *s, int *mask, int *type)
 {
   char last_flag=' ';
   int i;
-  
+
   for(;*s;s++) {
     for(i=0;flaglist[i].flag && flaglist[i].flag != *s;i++);
     if(!flaglist[i].flag) {
@@ -39,7 +39,7 @@ static int convert_flags(dbref player, char *s, int *mask, int *type)
     /* Add flag to bitmask */
     *mask |= flaglist[i].bits;
   }
-  
+
   return 1;
 }
 
@@ -56,7 +56,7 @@ void do_search(dbref player, char *arg1, char *arg3)
 
   if(!charge_money(player, SEARCH_COST, 1))
     return;
-  
+
   /* Determine arguments */
   if((arg2=strchr(arg1, ' ')))   /* @search <arg1> <arg2>=<arg3> */
     *arg2++='\0';
@@ -66,7 +66,7 @@ void do_search(dbref player, char *arg1, char *arg3)
     arg2=arg1;
     arg1="";
   }
-  
+
   /* List disconnected rooms? */
   if(strlen(arg1) > 3 && string_prefix("disconnected", arg1)) {
     if(!power(player, POW_DB)) {
@@ -276,7 +276,7 @@ void do_stats(dbref player, char *name)
   int a, b, c, i, total, obj[8], pla[NUM_CLASSES];
   int count, owner=AMBIGUOUS, cols=get_cols(NULL, player)-26;
   char buf[512], buf2[32];
-  
+
   /* Find player to stat on */
   if(*name && (owner = lookup_player(name)) == AMBIGUOUS)
     owner=db[player].owner;
@@ -287,7 +287,7 @@ void do_stats(dbref player, char *name)
     notify(player, "You need a search warrant to do that.");
     return;
   }
-  
+
   /* Calculate the number of objects the player (or database) has */
   calc_stats(owner, &total, obj, pla);
 
@@ -355,7 +355,7 @@ void do_stats(dbref player, char *name)
 void calc_stats(dbref owner, int *total, int *obj, int *pla)
 {
   dbref thing, i;
-  
+
   /* Zero out count stats */
   *total=0;
   for(i=0;i<8;i++)
@@ -380,7 +380,7 @@ void do_wipeout(dbref player, char *who, char *arg2)
 {
   dbref thing=lookup_player(who);
   int a, type=NOTYPE;
-  
+
   /* Find player to destroy stuff from */
   if(thing <= NOTHING) {
     notify(player, "No such player '%s'.", who);
@@ -424,7 +424,7 @@ void do_wipeout(dbref player, char *who, char *arg2)
 void do_chownall(dbref player, char *arg1, char *arg2)
 {
   dbref from, rcpt, a;
-  
+
   if(!*arg1 || !*arg2) {
     notify(player, "Usage: @chownall <from player>=<to player>");
     return;
@@ -577,7 +577,7 @@ void do_boot(dbref player, char *name, char *msg)
 void do_join(dbref player, char *arg1)
 {
   dbref thing=lookup_player(arg1);
-  
+
   /* Check permissions */
   if(thing <= NOTHING) {
     notify(player, "No such player '%s'.", arg1);
@@ -607,7 +607,7 @@ void do_join(dbref player, char *arg1)
 void do_summon(dbref player, char *arg1)
 {
   dbref thing=lookup_player(arg1);
-  
+
   /* Check permissions */
   if(thing <= NOTHING) {
     notify(player, "No such player '%s'.", arg1);
@@ -637,7 +637,7 @@ void do_summon(dbref player, char *arg1)
 void do_capture(dbref player, char *arg1, char *arg2)
 {
   dbref thing=lookup_player(arg1);
-  
+
   /* Check permissions */
   if(thing <= NOTHING) {
     notify(player, "No such player '%s'.", arg1);
@@ -674,7 +674,7 @@ void do_capture(dbref player, char *arg1, char *arg2)
 void do_uncapture(dbref player, char *arg1)
 {
   dbref thing=lookup_player(arg1);
-  
+
   /* Check permissions */
   if(thing <= NOTHING) {
     notify(player, "No such player '%s'.", arg1);
@@ -1033,8 +1033,35 @@ void list_sitelocks(dbref player)
   }
 }
 
+void sql_save_sitelocks()
+{
+    struct sitelock *ptr=sitelock_list;
+    int result;
+    sqlite3_stmt *res;
+    char query[1024];
+
+    if(ptr) {
+      for(;ptr;ptr=ptr->next) {
+        snprintf(query, 1024, "INSERT INTO sitelocks VALUES (%i, '%s')",
+          ptr->class,
+          ptr->host
+        );
+        rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+        if (rc != SQLITE_OK) {
+          log_error("SQL statement failed during '%s' table population: %s", "sitelocks", sqlite3_errmsg(msdb));
+            return;
+        }
+        result = sqlite3_step(res);
+        if (result != SQLITE_DONE)
+          log_error("Unexpected result populating '%s' table: %i", "sitelocks", result);
+        sqlite3_finalize(res);
+      }
+    }
+}
+
 void save_sitelocks(FILE *f)
 {
+  sql_save_sitelocks();
   struct sitelock *ptr=sitelock_list;
 
   if(ptr) {

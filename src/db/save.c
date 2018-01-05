@@ -105,7 +105,7 @@ static void sql_write_object(dbref i)
   );
   rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table population: %s\n", "objects", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table population: %s", "objects", sqlite3_errmsg(msdb));
     return;
   }
   result = sqlite3_step(res);
@@ -135,7 +135,7 @@ static void sql_write_object(dbref i)
     );
     rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
     if (rc != SQLITE_OK) {
-      log_error("SQL statement failed during '%s' table population: %s\n", "players", sqlite3_errmsg(msdb));
+      log_error("SQL statement failed during '%s' table population: %s", "players", sqlite3_errmsg(msdb));
       return;
     }
     result = sqlite3_step(res);
@@ -154,7 +154,7 @@ static void sql_write_object(dbref i)
     );
     rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
     if (rc != SQLITE_OK) {
-      log_error("SQL statement failed during '%s' table population: %s\n", "attributes", sqlite3_errmsg(msdb));
+      log_error("SQL statement failed during '%s' table population: %s", "attributes", sqlite3_errmsg(msdb));
         return;
     }
     result = sqlite3_step(res);
@@ -173,7 +173,7 @@ static void sql_write_object(dbref i)
     );
     rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
     if (rc != SQLITE_OK) {
-      log_error("SQL statement failed during '%s' table population: %s\n", "attribute_definitions", sqlite3_errmsg(msdb));
+      log_error("SQL statement failed during '%s' table population: %s", "attribute_definitions", sqlite3_errmsg(msdb));
       return;
     }
     result = sqlite3_step(res);
@@ -200,7 +200,7 @@ dbref sql_write()
   /* Create all the database tables */
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS database", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'database' table drop: %s\n", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during 'database' table drop: %s", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -216,7 +216,7 @@ dbref sql_write()
     "NUM_POWS INTEGER"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'database' table creation: %s\n", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during 'database' table creation: %s", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -226,7 +226,7 @@ dbref sql_write()
 
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS objects", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table drop: %s\n", "objects", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table drop: %s", "objects", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -253,7 +253,7 @@ dbref sql_write()
       "zone INTEGER"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table creation: %s\n", "objects", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table creation: %s", "objects", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -263,7 +263,7 @@ dbref sql_write()
 
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS players", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table drop: %s\n", "players", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table drop: %s", "players", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -290,7 +290,7 @@ dbref sql_write()
       "powers STRING"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table creation: %s\n", "players", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table creation: %s", "players", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -300,7 +300,7 @@ dbref sql_write()
 
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS attributes", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table drop: %s\n", "attributes", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table drop: %s", "attributes", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -315,7 +315,7 @@ dbref sql_write()
       "text STRING"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table creation: %s\n", "attributes", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table creation: %s", "attributes", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -325,7 +325,7 @@ dbref sql_write()
 
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS attribute_definitions", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table drop: %s\n", "attribute_definitions", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table drop: %s", "attribute_definitions", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -340,7 +340,7 @@ dbref sql_write()
       "name STRING"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table creation: %s\n", "attribute_definitions", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table creation: %s", "attribute_definitions", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -350,7 +350,7 @@ dbref sql_write()
 
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS config", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table drop: %s\n", "config", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table drop: %s", "config", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -364,12 +364,35 @@ dbref sql_write()
       "var STRING"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during '%s' table creation: %s\n", "config", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during '%s' table creation: %s", "config", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
   if (result != SQLITE_DONE)
     log_error("Unexpected result creating '%s' table: %i", "config", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS sitelocks", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s", "sitelocks", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "sitelocks", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE sitelocks ("
+      "class INTEGER,"
+      "host STRING"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s", "sitelocks", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "sitelocks", result);
   sqlite3_finalize(res);
 
   /* Write database header */
@@ -382,7 +405,7 @@ dbref sql_write()
   );
   rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
   if (rc != SQLITE_OK) {
-    log_error("SQL statement failed during 'database' table population: %s\n", sqlite3_errmsg(msdb));
+    log_error("SQL statement failed during 'database' table population: %s", sqlite3_errmsg(msdb));
     return 0;
   }
   result = sqlite3_step(res);
@@ -487,6 +510,8 @@ dbref db_write(FILE *f, char *filename)
     return 0;
   }
 
+  if(dt != db_top)
+    log_error("Object count mismatch between SQLite and TinyMARE databases!");
   return db_top;
 }
 
