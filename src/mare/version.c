@@ -53,5 +53,5 @@
 
 char *mud_copyright="Copyright (C) 2017 by Byron Stanoszek";
 char *mud_compiler_version=__VERSION__;
-char *mud_compile_date="01/05/2018";
-char *mud_version="TinyMARE v1.0.10339.130";
+char *mud_compile_date="01/06/2018";
+char *mud_version="TinyMARE v1.0.10339.133";

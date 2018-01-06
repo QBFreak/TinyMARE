@@ -58,34 +58,11 @@ static void sql_write_object(dbref i)
   ATRDEF *k;
 
   sqlite3_stmt *res;
-  int result, zone, parents, children;
+  int result, *ptr;
   char query[1024];
 
-  // Look out for those blasted null pointers...
-  if(Typeof(i) == TYPE_ROOM || Typeof(i) == TYPE_ZONE) {
-    if(db[i].zone == NULL) {
-      zone = NOTHING;
-    } else {
-      zone = *db[i].zone;
-    }
-  } else {
-    zone = NOTHING;
-  }
-
-  if(db[i].parents == NULL) {
-      parents = NOTHING;
-  } else {
-      parents = *db[i].parents;
-  }
-
-  if(db[i].children == NULL) {
-      children = NOTHING;
-  } else {
-      children = *db[i].children;
-  }
-
   /* Save object header */
-  snprintf(query, 1024, "INSERT INTO objects VALUES (%i, '%s', %i, %i, %i, %i, %i, %i, %i, %i, %i, %li, %li, %i, %i, %i)",
+  snprintf(query, 1024, "INSERT INTO objects VALUES (%i, '%s', %i, %i, %i, %i, %i, %i, %i, %i, %i, %li, %li)",
     i,
     db[i].name,
     db[i].location,
@@ -98,10 +75,7 @@ static void sql_write_object(dbref i)
     db[i].plane,
     db[i].pennies,
     db[i].create_time,
-    db[i].mod_time,
-    parents,
-    children,
-    zone
+    db[i].mod_time
   );
   rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
   if (rc != SQLITE_OK) {
@@ -112,6 +86,63 @@ static void sql_write_object(dbref i)
   if (result != SQLITE_DONE)
     log_error("Unexpected result populating '%s' table: %i", "objects", result);
   sqlite3_finalize(res);
+
+  /* Save Parents list */
+  for(ptr=db[i].parents;ptr && *ptr != NOTHING;ptr++)
+  {
+    snprintf(query, 1024, "INSERT INTO parents VALUES (%i, %i)",
+      i,
+      *ptr
+    );
+    rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+    if (rc != SQLITE_OK) {
+      log_error("SQL statement failed during '%s' table population: %s", "parents", sqlite3_errmsg(msdb));
+      return;
+    }
+    result = sqlite3_step(res);
+    if (result != SQLITE_DONE)
+      log_error("Unexpected result populating '%s' table: %i", "parents", result);
+    sqlite3_finalize(res);
+  }
+
+  /* Save Children list */
+  for(ptr=db[i].children;ptr && *ptr != NOTHING;ptr++)
+  {
+    snprintf(query, 1024, "INSERT INTO children VALUES (%i, %i)",
+      i,
+      *ptr
+    );
+    rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+    if (rc != SQLITE_OK) {
+      log_error("SQL statement failed during '%s' table population: %s", "children", sqlite3_errmsg(msdb));
+      return;
+    }
+    result = sqlite3_step(res);
+    if (result != SQLITE_DONE)
+      log_error("Unexpected result populating '%s' table: %i", "children", result);
+    sqlite3_finalize(res);
+  }
+
+  /* Save Zone list */
+  if(Typeof(i) == TYPE_ROOM || Typeof(i) == TYPE_ZONE)
+  {
+    for(ptr=db[i].zone;ptr && *ptr != NOTHING;ptr++)
+    {
+      snprintf(query, 1024, "INSERT INTO zones VALUES (%i, %i)",
+        i,
+        *ptr
+      );
+      rc = sqlite3_prepare_v2(msdb, query, -1, &res, 0);
+      if (rc != SQLITE_OK) {
+        log_error("SQL statement failed during '%s' table population: %s", "zones", sqlite3_errmsg(msdb));
+        return;
+      }
+      result = sqlite3_step(res);
+      if (result != SQLITE_DONE)
+        log_error("Unexpected result populating '%s' table: %i", "zones", result);
+      sqlite3_finalize(res);
+    }
+  }
 
   /* Write out special player information */
   if(Typeof(i) == TYPE_PLAYER) {
@@ -247,10 +278,7 @@ dbref sql_write()
       "plane INTEGER,"
       "pennies INTEGER,"
       "create_time INTEGER,"
-      "mod_time INTEGER,"
-      "parents INTEGER,"
-      "children INTEGER,"
-      "zone INTEGER"
+      "mod_time INTEGER"
   ")", -1, &res, 0);
   if (rc != SQLITE_OK) {
     log_error("SQL statement failed during '%s' table creation: %s", "objects", sqlite3_errmsg(msdb));
@@ -259,6 +287,75 @@ dbref sql_write()
   result = sqlite3_step(res);
   if (result != SQLITE_DONE)
     log_error("Unexpected result creating '%s' table: %i", "objects", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS parents", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s", "parents", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "parents", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE parents ("
+      "dbref INTEGER,"
+      "parent INTEGER"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s", "parents", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "parents", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS children", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s", "children", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "children", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE children ("
+      "dbref INTEGER,"
+      "child INTEGER"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s", "children", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "children", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS zones", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table drop: %s", "zones", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result dropping '%s' table: %i", "zones", result);
+  sqlite3_finalize(res);
+
+  rc = sqlite3_prepare_v2(msdb, "CREATE TABLE zones ("
+      "dbref INTEGER,"
+      "zone INTEGER"
+  ")", -1, &res, 0);
+  if (rc != SQLITE_OK) {
+    log_error("SQL statement failed during '%s' table creation: %s", "zones", sqlite3_errmsg(msdb));
+    return 0;
+  }
+  result = sqlite3_step(res);
+  if (result != SQLITE_DONE)
+    log_error("Unexpected result creating '%s' table: %i", "zones", result);
   sqlite3_finalize(res);
 
   rc = sqlite3_prepare_v2(msdb, "DROP TABLE IF EXISTS players", -1, &res, 0);
